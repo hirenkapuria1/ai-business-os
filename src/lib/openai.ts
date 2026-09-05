@@ -163,11 +163,11 @@ Use plain language and avoid jargon.`
 }
 
 export async function generateAICeoAnalysis(data: {
-  salesData: any
-  trafficData: any
-  contentPerformance: any
-  emailMetrics: any
-  supportTickets: any
+  salesData: unknown
+  trafficData: unknown
+  contentPerformance: unknown
+  emailMetrics: unknown
+  supportTickets: unknown
 }) {
   try {
     const prompt = `

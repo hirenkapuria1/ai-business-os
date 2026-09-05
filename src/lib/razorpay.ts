@@ -1,4 +1,5 @@
 import Razorpay from 'razorpay'
+import { createHmac } from 'crypto'
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID!,
@@ -29,8 +30,7 @@ export async function verifyRazorpaySignature(
   signature: string
 ) {
   try {
-    const crypto = require('crypto')
-    const hmac = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+    const hmac = createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
     hmac.update(`${orderId}|${paymentId}`)
     const generated_signature = hmac.digest('hex')
 

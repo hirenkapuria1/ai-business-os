@@ -205,12 +205,14 @@ Automated emails via Resend:
 ## 🧪 Testing
 
 ```bash
-# Run tests
-npm run test
-
-# Run tests with coverage
-npm run test:coverage
+npm run lint
+npm run type-check
+npm run test:unit
+npm run test:integration
+npm run build
 ```
+
+`test:integration` requires `DATABASE_URL` to point to a migrated PostgreSQL database. Run the complete local CI sequence with `npm run check`. Pull requests run the same checks against a clean PostgreSQL service in GitHub Actions.
 
 ## 📚 Documentation
 
