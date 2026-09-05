@@ -1,26 +1,13 @@
 import bcrypt from 'bcryptjs'
 import { Prisma } from '@prisma/client'
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
-
+import { registerSchema } from '@/lib/auth-contracts'
 import {
   AUTH_COOKIE_NAME,
   AUTH_COOKIE_OPTIONS,
   createSessionToken,
 } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-
-const registerSchema = z
-  .object({
-    name: z.string().trim().max(100).optional(),
-    email: z.string().trim().email().transform((value) => value.toLowerCase()),
-    password: z.string().min(8).max(128),
-    passwordConfirm: z.string(),
-  })
-  .refine((data) => data.password === data.passwordConfirm, {
-    message: 'Passwords do not match',
-    path: ['passwordConfirm'],
-  })
 
 export async function POST(request: Request) {
   try {
