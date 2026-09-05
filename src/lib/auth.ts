@@ -1,7 +1,6 @@
 import { cookies } from 'next/headers'
-import jwt, { type JwtPayload } from 'jsonwebtoken'
-
 import { prisma } from '@/lib/prisma'
+import { createSignedSession, readSignedSession } from '@/lib/session-token'
 
 export const AUTH_COOKIE_NAME = 'pinreki_session'
 export const AUTH_COOKIE_OPTIONS = {
@@ -12,26 +11,18 @@ export const AUTH_COOKIE_OPTIONS = {
   maxAge: 60 * 60 * 24 * 7,
 }
 
-interface SessionPayload extends JwtPayload {
-  userId: string
-}
-
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET
 
-  if (!secret) {
-    throw new Error('JWT_SECRET is not configured')
+  if (!secret || secret.length < 32) {
+    throw new Error('JWT_SECRET must be configured with at least 32 characters')
   }
 
   return secret
 }
 
-function isSessionPayload(payload: string | JwtPayload): payload is SessionPayload {
-  return typeof payload !== 'string' && typeof payload.userId === 'string'
-}
-
 export function createSessionToken(userId: string) {
-  return jwt.sign({ userId }, getJwtSecret(), { expiresIn: '7d' })
+  return createSignedSession(userId, getJwtSecret())
 }
 
 export async function getCurrentUser() {
@@ -41,14 +32,10 @@ export async function getCurrentUser() {
     return null
   }
 
-  try {
-    const payload = jwt.verify(token, getJwtSecret())
+  const payload = readSignedSession(token, getJwtSecret())
+  if (!payload) return null
 
-    if (!isSessionPayload(payload)) {
-      return null
-    }
-
-    return prisma.user.findFirst({
+  return prisma.user.findFirst({
       where: {
         id: payload.userId,
         isActive: true,
@@ -60,12 +47,5 @@ export async function getCurrentUser() {
         role: true,
         createdAt: true,
       },
-    })
-  } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      return null
-    }
-
-    throw error
-  }
+  })
 }

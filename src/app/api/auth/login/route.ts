@@ -1,18 +1,12 @@
 import bcrypt from 'bcryptjs'
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
-
+import { loginSchema } from '@/lib/auth-contracts'
 import {
   AUTH_COOKIE_NAME,
   AUTH_COOKIE_OPTIONS,
   createSessionToken,
 } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-
-const loginSchema = z.object({
-  email: z.string().trim().email().transform((value) => value.toLowerCase()),
-  password: z.string().min(1).max(128),
-})
 
 export async function POST(request: Request) {
   try {
