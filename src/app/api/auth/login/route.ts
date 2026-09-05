@@ -7,8 +7,12 @@ import {
   createSessionToken,
 } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { checkRateLimit, requestKey } from '@/lib/security'
+import { logEvent } from '@/lib/logger'
 
 export async function POST(request: Request) {
+  const rate = checkRateLimit(requestKey(request, 'auth-login'), 10, 15 * 60 * 1000)
+  if (!rate.allowed) return NextResponse.json({ error: 'Too many sign-in attempts. Try again later.' }, { status: 429 })
   try {
     const parsed = loginSchema.safeParse(await request.json())
 
@@ -22,6 +26,7 @@ export async function POST(request: Request) {
       : false
 
     if (!user || !user.isActive || !passwordMatches) {
+      logEvent('warn', 'auth.login_failed', { email: parsed.data.email })
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
     }
 
@@ -33,6 +38,7 @@ export async function POST(request: Request) {
       createSessionToken(user.id),
       AUTH_COOKIE_OPTIONS
     )
+    logEvent('info', 'auth.login_succeeded', { userId: user.id })
     return response
   } catch (error) {
     console.error('Login error:', error)

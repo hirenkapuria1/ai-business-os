@@ -3,8 +3,11 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { verifyRazorpaySignature, fetchRazorpayPayment } from '@/lib/razorpay'
 import { sendOrderConfirmationEmail } from '@/lib/email'
+import { checkRateLimit, requestKey } from '@/lib/security'
 
 export async function POST(request: NextRequest) {
+  const rate = checkRateLimit(requestKey(request, 'payment-verify'), 20, 15 * 60 * 1000)
+  if (!rate.allowed) return NextResponse.json({ error: 'Too many payment verification attempts' }, { status: 429 })
   try {
     const { razorpayOrderId, razorpayPaymentId, razorpaySignature } =
       await request.json()
