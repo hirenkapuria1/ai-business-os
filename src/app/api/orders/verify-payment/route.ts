@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { verifyRazorpaySignature, fetchRazorpayPayment } from '@/lib/razorpay'
 import { sendOrderConfirmationEmail } from '@/lib/email'
@@ -70,9 +71,9 @@ export async function POST(request: NextRequest) {
       data: {
         orderId: order.id,
         stripePaymentId: razorpayPaymentId,
-        amount: new Decimal(order.totalAmount),
+        amount: new Prisma.Decimal(order.totalAmount),
         status: 'SUCCEEDED',
-        receipt: payment.receipt,
+        receipt: payment.id,
       },
     })
 
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
       where: { id: order.customerId },
       data: {
         totalSpent: {
-          increment: new Decimal(order.totalAmount),
+          increment: new Prisma.Decimal(order.totalAmount),
         },
       },
     })
@@ -96,13 +97,13 @@ export async function POST(request: NextRequest) {
       },
       update: {
         purchases: { increment: 1 },
-        revenue: { increment: new Decimal(order.totalAmount) },
+        revenue: { increment: new Prisma.Decimal(order.totalAmount) },
       },
       create: {
         date: new Date(),
         trafficSource: 'purchase',
         purchases: 1,
-        revenue: new Decimal(order.totalAmount),
+        revenue: new Prisma.Decimal(order.totalAmount),
       },
     })
 
