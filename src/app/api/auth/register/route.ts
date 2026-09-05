@@ -8,8 +8,12 @@ import {
   createSessionToken,
 } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { checkRateLimit, requestKey } from '@/lib/security'
+import { logEvent } from '@/lib/logger'
 
 export async function POST(request: Request) {
+  const rate = checkRateLimit(requestKey(request, 'auth-register'), 5, 60 * 60 * 1000)
+  if (!rate.allowed) return NextResponse.json({ error: 'Too many registration attempts. Try again later.' }, { status: 429 })
   try {
     const parsed = registerSchema.safeParse(await request.json())
 
@@ -38,12 +42,14 @@ export async function POST(request: Request) {
       createSessionToken(user.id),
       AUTH_COOKIE_OPTIONS
     )
+    logEvent('info', 'auth.registration_succeeded', { userId: user.id })
     return response
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2002'
     ) {
+      logEvent('warn', 'auth.registration_duplicate')
       return NextResponse.json(
         { error: 'An account with this email already exists' },
         { status: 409 }
