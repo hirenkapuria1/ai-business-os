@@ -13,7 +13,7 @@ interface Product {
   name: string
   shortDescription: string
   price: number
-  salePrice?: number
+  salePrice: number | null
   productImage: string
   category: string
 }
@@ -135,7 +135,7 @@ export default function ProductsPage() {
                   </p>
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      {product.salePrice ? (
+                      {product.salePrice !== null ? (
                         <>
                           <span className="text-2xl font-bold text-brand-600">
                             ₹{product.salePrice}
